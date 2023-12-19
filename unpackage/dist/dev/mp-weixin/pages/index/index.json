@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "uni-app",
+  "usingComponents": {
+    "mycalendar": "../../components/my-calendar/my-calendar"
+  }
+}
