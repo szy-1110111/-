@@ -3441,6 +3441,9 @@ function traverse(value, seen) {
   }
   return value;
 }
+function defineComponent(options) {
+  return isFunction(options) ? { setup: options, name: options.name } : options;
+}
 const isKeepAlive = (vnode) => vnode.type.__isKeepAlive;
 function onActivated(hook, target) {
   registerKeepAliveHook(hook, "a", target);
@@ -6726,8 +6729,12 @@ const createSubpackageApp = initCreateSubpackageApp();
 }
 exports._export_sfc = _export_sfc;
 exports.createSSRApp = createSSRApp;
+exports.defineComponent = defineComponent;
 exports.e = e;
 exports.f = f;
 exports.n = n;
 exports.o = o;
+exports.onMounted = onMounted;
+exports.ref = ref;
 exports.t = t;
+exports.watch = watch;

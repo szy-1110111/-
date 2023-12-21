@@ -74,165 +74,163 @@
   </view>
 </template>
 
-<script lang="ts">
-export default {
-  data() {
-    return {
-      current: 1, //轮播页码
-      nowYear: new Date().getFullYear(), //当前选的年
-      nowMonth: new Date().getMonth() + 1, //当前选的月
-      today: new Date().getDate(), //系统本日
-      toMonth: new Date().getMonth() + 1, //系统本月
-      toYear: new Date().getFullYear(), //系统本年
-      weeksTxt: ['日', '一', '二', '三', '四', '五', '六'],
-      preM_date: [] as any, //上个月日期数据
-      thenM_date: [] as any, //此月日期数据
-      nexM_date: [] as any //下个月日期数据
-    }
-  },
-  props: {
-    //当月打卡数据
-    patchMonthData: {
-      type: Array,
-      default: () => {
-        return []
-      }
-    }
-  },
-  mounted() {
-    this.init()
-  },
-  watch: {
-    current(newVal, oldVal) {
-      switch (oldVal) {
-        //中间页面滚动时
-        case 1:
-          if (newVal == 2) {
-            //右滑
-            let newNow = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-            this.nowYear = newNow.year
-            this.nowMonth = newNow.month
-            // 下个月日历
-            let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-            this.calculateGrids(next.year, next.month, 'preM_date')
-            this.fullDate(next.year, next.month, this.preM_date)
-          } else if (newVal == 0) {
-            //左滑
-            let newNow = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-            this.nowYear = newNow.year
-            this.nowMonth = newNow.month
-            // 下个月日历
-            let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-            this.calculateGrids(next.year, next.month, 'nexM_date')
-            this.fullDate(next.year, next.month, this.nexM_date)
-          }
-          //传给调用模板页面请求当月打卡数据
-          this.$emit('changeSwiper', this.nowYear + '-' + this.nowMonth)
-          break
-        //末尾页面滚动时
-        case 2:
-          if (newVal == 0) {
-            //右滑
-            let newNow = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-            this.nowYear = newNow.year
-            this.nowMonth = newNow.month
-            // 下个月日历
-            let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-            this.calculateGrids(next.year, next.month, 'thenM_date')
-            this.fullDate(next.year, next.month, this.thenM_date)
-          } else if (newVal == 1) {
-            //左滑
-            let newNow = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-            this.nowYear = newNow.year
-            this.nowMonth = newNow.month
-            // 下个月日历
-            let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-            this.calculateGrids(next.year, next.month, 'preM_date')
-            this.fullDate(next.year, next.month, this.preM_date)
-          }
-          //传给调用模板页面请求当月打卡数据
-          this.$emit('changeSwiper', this.nowYear + '-' + this.nowMonth)
-          break
-        //头页面滚动时
-        case 0:
-          if (newVal == 1) {
-            //右滑
-            let newNow = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-            this.nowYear = newNow.year
-            this.nowMonth = newNow.month
-            // 下个月日历
-            let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-            this.calculateGrids(next.year, next.month, 'nexM_date')
-            this.fullDate(next.year, next.month, this.nexM_date)
-          } else if (newVal == 2) {
-            //左滑
-            let newNow = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-            this.nowYear = newNow.year
-            this.nowMonth = newNow.month
-            // 下个月日历
-            let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-            this.calculateGrids(next.year, next.month, 'thenM_date')
-            this.fullDate(next.year, next.month, this.thenM_date)
-          }
-          //传给调用模板页面请求当月打卡数据
-          this.$emit('changeSwiper', this.nowYear + '-' + this.nowMonth)
-          break
-      }
-    },
+<script lang="ts" setup>
+	import {ref,reactive,watch,onMounted,defineEmits }from 'vue'
+	import { DailyData } from './type'
+	const emit = defineEmits(['selectData'])
+	
+      const current=ref(1)//轮播当前页码
+      const nowYear=ref(new Date().getFullYear())//当前显示的年
+      const nowMonth=ref(new Date().getMonth() + 1)//当前显示的月
+      const today=new Date().getDate()  //系统本日
+      const toMonth= new Date().getMonth() + 1 //系统本月
+      const toYear= new Date().getFullYear() //系统本年
+      const weeksTxt=['日', '一', '二', '三', '四', '五', '六']
+      const preM_date=ref([] as DailyData[])//上个月日期数据
+      const thenM_date=ref([]as DailyData[] )//此月日期数据
+      const nexM_date=ref([]as DailyData[] )//下个月日期数据
 
-    // 打卡数据变动
-    patchMonthData(newVal, oldVal) {
-      // 当前页数将打卡数据加入到对应的数据数组中
-      switch (this.current) {
-        case 0:
-          this.changePatchMonth(newVal, this.preM_date)
-          break
-        case 1:
-          this.changePatchMonth(newVal, this.thenM_date)
-          break
-        case 2:
-          this.changePatchMonth(newVal, this.nexM_date)
-          break
-      }
-    }
-  },
-  methods: {
-    // 初始化日期数据
-    init() {
-      this.calculateGrids(this.nowYear, this.nowMonth, 'thenM_date')
-      this.fullDate(this.nowYear, this.nowMonth, this.thenM_date)
+	const props= defineProps({
+		//当月打卡数据
+		patchMonthData: {
+		  type: Array,
+		  default: () => {
+			return []
+		  }
+		}
+	})
+
+
+  // mounted() {
+  //   this.init()
+  // },
+  watch([current.value,props.patchMonthData],([newCurrentt,newPatchMonthData],[oldCurrentt,oldPatchMonthData])=>{
+	  switch (oldCurrentt) {
+	    //中间页面滚动时
+	    case 1:
+	      if (newCurrentt == 2) {
+	        //右滑
+	        let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
+	        nowYear.value = newNow.year
+	        nowMonth.value = newNow.month
+	        // 下个月日历
+	        let next = getOperateMonthDate(nowYear.value,nowMonth.value, 1)
+	        calculateGrids(next.year, next.month, preM_date.value)
+	        fullDate(next.year, next.month,preM_date.value)
+	      } else if (newCurrentt == 0) {
+	        //左滑
+	        let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+	        nowYear.value = newNow.year
+	        nowMonth.value= newNow.month
+	        // 下个月日历
+	        let next = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+	        calculateGrids(next.year, next.month, nexM_date.value)
+	        fullDate(next.year, next.month,nexM_date.value)
+	      }
+	      //传给调用模板页面请求当月打卡数据
+	      this.$emit('changeSwiper', nowYear.value + '-' +nowMonth.value)
+	      break
+	    //末尾页面滚动时
+	    case 2:
+	      if (newCurrentt == 0) {
+	        //右滑
+	        let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
+	        nowYear.value = newNow.year
+	        nowMonth.value = newNow.month
+	        // 下个月日历
+	        let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
+	        calculateGrids(next.year, next.month, thenM_date.value)
+	        fullDate(next.year, next.month, thenM_date.value)
+	      } else if (newCurrentt == 1) {
+	        //左滑
+	        let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+	        nowYear.value = newNow.year
+	        nowMonth.value = newNow.month
+	        // 下个月日历
+	        let next = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+	        calculateGrids(next.year, next.month, preM_date.value)
+	        fullDate(next.year, next.month, preM_date.value)
+	      }
+	      //传给调用模板页面请求当月打卡数据
+	      this.$emit('changeSwiper', nowYear.value + '-' + nowMonth.value)
+	      break
+	    //头页面滚动时
+	    case 0:
+	      if (newCurrentt == 1) {
+	        //右滑
+	        let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
+	        nowYear.value = newNow.year
+	        nowMonth.value = newNow.month
+	        // 下个月日历
+	        let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
+	        calculateGrids(next.year, next.month, nexM_date.value)
+	        fullDate(next.year, next.month, nexM_date.value)
+	      } else if (newCurrentt == 2) {
+	        //左滑
+	        let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+	        nowYear.value= newNow.year
+	        nowMonth.value = newNow.month
+	        // 下个月日历
+	        let next = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+	        calculateGrids(next.year, next.month, thenM_date.value)
+	        fullDate(next.year, next.month, thenM_date.value)
+	      }
+	      //传给调用模板页面请求当月打卡数据
+	      this.$emit('changeSwiper', nowYear.value + '-' + nowMonth.value)
+	      break
+	  }
+	  // 打卡数据变动
+	  // 当前页数将打卡数据加入到对应的数据数组中
+	  switch (current.value) {
+	    case 0:
+	      changePatchMonth(newPatchMonthData, preM_date.value)
+	      break
+	    case 1:
+	      changePatchMonth(newPatchMonthData, thenM_date.value)
+	      break
+	    case 2:
+	      changePatchMonth(newPatchMonthData, nexM_date.value)
+	      break
+	  }
+  })
+	onMounted(()=>{
+		init()
+	})
+    const init=()=>{
+      calculateGrids(nowYear.value, nowMonth.value, thenM_date.value)
+      fullDate(nowYear.value, nowMonth.value, thenM_date.value)
       // 下个月日历
-      let next = this.getOperateMonthDate(this.nowYear, this.nowMonth, 1)
-      this.calculateGrids(next.year, next.month, 'nexM_date')
-      this.fullDate(next.year, next.month, this.nexM_date)
+      let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
+      calculateGrids(next.year, next.month, nexM_date.value)
+      fullDate(next.year, next.month, nexM_date.value)
       // 上个月日历
-      let last = this.getOperateMonthDate(this.nowYear, this.nowMonth, -1)
-      this.calculateGrids(last.year, last.month, 'preM_date')
-      this.fullDate(last.year, last.month, this.preM_date)
-    },
+      let last = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
+      calculateGrids(last.year, last.month, preM_date.value)
+      fullDate(last.year, last.month, preM_date.value)
+    }
 
-    toIOSDate(strDate: string) {
-      // iso不认识"-"拼接的日期，所以转/
+// iso不认识"-"拼接的日期，所以转/
+    const toIOSDate=(strDate: string)=>{
       return strDate ? strDate.replace(/-/g, '/') : strDate
-    },
+    }
 
     // 计算某月1号为星期几
-    getFirstDayOfWeek(year: number, month: number, day: number = 1) {
+    const getFirstDayOfWeek=(year: number, month: number, day: number = 1)=>{
       let date = new Date(year, month - 1, day)
       // getDay方法返回的是一个0（代表星期日）到6（代表星期六）的数字
       return date.getDay()
-    },
+    }
 
     // 计算某月一个有多少天
-    getDaysInMonth(year: number, month: number) {
+    const getDaysInMonth=(year: number, month: number)=> {
       // 设置日期为下个月的第0天，就会得到这个月的最后一天
       let date = new Date(year, month, 0)
       // getDate方法返回的是日期，也就是这个月的总天数
       return date.getDate()
-    },
+    }
 
     // 计算上、下月
-    getOperateMonthDate(y: number, m: number, num: number) {
+    const getOperateMonthDate=(y: number, m: number, num: number)=> {
       let month: number = m + num
       let year: number = y
       month > 12 ? (year++, (month = 1)) : null //12月下个月为下一年的一月
@@ -241,17 +239,17 @@ export default {
         month,
         year
       }
-    },
+    }
 
     // 某月的日历数据导入
-    calculateGrids(year: number, month: number, target: string) {
+    const calculateGrids=(year: number, month: number, calendarDays: DailyData[])=> {
       // 计算当月1号前空了几个格子，把它填充在传入的某月的M_data数组的前面
       //计算每个月时要清零
-      let calendarDays = [] as any
-      const firstDayOfWeek = this.getFirstDayOfWeek(year, month)
+      let newCalendarDays = []
+      const firstDayOfWeek = getFirstDayOfWeek(year, month)
       if (firstDayOfWeek > 0) {
         for (let i = 0; i < firstDayOfWeek; i++) {
-          calendarDays.push({
+          newCalendarDays.push({
             date: null, // 显示的日期
             fullDate: null, // 日期yyyy-mm-dd格式
             isBeforeToday: true, // 今日之前
@@ -263,13 +261,13 @@ export default {
         }
       }
       //  绘制当月天数占的格子，并把它放到数据数组中
-      const thisMonthDays = this.getDaysInMonth(year, month)
-      const toDate = new Date(this.toYear + '/' + this.toMonth + '/' + this.today)
+      const thisMonthDays = getDaysInMonth(year, month)
+      const toDate = new Date(toYear + '/' + toMonth + '/' + today)
       for (let i = 1; i <= thisMonthDays; i++) {
         const fullDate = year + '-' + month + '-' + i.toString().padStart(2, '0')
-        const isBeforeToday = new Date(this.toIOSDate(fullDate)) < toDate
-        const isToday = new Date(this.toIOSDate(fullDate)).getTime() == toDate.getTime()
-        calendarDays.push({
+        const isBeforeToday = new Date(toIOSDate(fullDate)) < toDate
+        const isToday = new Date(toIOSDate(fullDate)).getTime() == toDate.getTime()
+        newCalendarDays.push({
           date: i,
           fullDate,
           isBeforeToday,
@@ -279,25 +277,26 @@ export default {
           isSelect: false //当前日期是否被选中
         })
       }
-      this.$set(this, target, calendarDays)
-      // console.log(calendarDays, 11)
-    },
+	  calendarDays.splice(0, calendarDays.length, ...newCalendarDays);
+      // this.$set(this, target, calendarDays)
+      console.log(thenM_date.value)
+    }
 
     // 填充日期数组
-    fullDate(year: number, month: number, calendarDays: [any]) {
+    const fullDate=(year: number, month: number, calendarDays: DailyData[]) =>{
       // 日历前填充上个月末尾日期
-      const firstDayOfWeek = this.getFirstDayOfWeek(year, month) //1号星期几
-      const lastMonthEndDay = this.getDaysInMonth(year, month - 1) //上个月天数
-      const lastMonth = this.getOperateMonthDate(year, month, -1)
+      const firstDayOfWeek = getFirstDayOfWeek(year, month) //1号星期几
+      const lastMonthEndDay = getDaysInMonth(year, month - 1) //上个月天数
+      const lastMonth = getOperateMonthDate(year, month, -1)
       for (let i = 0; i < firstDayOfWeek; i++) {
         const date = lastMonthEndDay - firstDayOfWeek + 1 + i
         calendarDays[i].date = date
         calendarDays[i].fullDate = lastMonth.year + '-' + lastMonth.month + '-' + date
       }
       // 日历后补下个月初日期
-      const endDay = this.getDaysInMonth(year, month) //本月最后一天几号
-      const lastDayOfWeek = this.getFirstDayOfWeek(year, month, endDay) //本月最后一天星期几
-      const nextMonth = this.getOperateMonthDate(year, month, 1)
+      const endDay = getDaysInMonth(year, month) //本月最后一天几号
+      const lastDayOfWeek = getFirstDayOfWeek(year, month, endDay) //本月最后一天星期几
+      const nextMonth = getOperateMonthDate(year, month, 1)
       for (let i = 1; i <= 6 - lastDayOfWeek; i++) {
         calendarDays.push({
           date: i,
@@ -309,11 +308,11 @@ export default {
           isSelect: false //当前日期是否被选中
         })
       }
-    },
+    }
 
     // 父组件传值处理函数
     // 当月打卡状态获取并加入数据数组中
-    changePatchMonth(patchMonthData: [], M_data: []) {
+    const changePatchMonth=(patchMonthData: [], M_data: [])=> {
       if (patchMonthData && M_data) {
         M_data.map((item: any) => {
           patchMonthData.forEach((item1: any) => {
@@ -339,16 +338,16 @@ export default {
           return item
         })
       }
-    },
+    }
 
     // 交互事件函数
     // 滑动动画结束，改变前后页的日历数组
-    changeSwiper(e: any) {
-      this.current = e.detail.current
-    },
+    const changeSwiper=(e: any) =>{
+      current.value = e.detail.current
+    }
     // 点击日历日期事件
-    selectData(data: string, M_data: [any]) {
-      this.$emit('selectData', data)
+    const selectData=(data: string, M_data: [any])=> {
+      emit('selectData', data)
       // 选中改变日历选中日期样式
       M_data.map((item: any, index: number) => {
         item.isSelect = false
@@ -356,8 +355,8 @@ export default {
         return item
       })
     }
-  }
-}
+  // }
+// }
 </script>
 
 <style lang="less" scoped>
