@@ -3,7 +3,7 @@
 module.exports = {
   rules: {
     // @see: https://commitlint.js.org/#/reference-rules
-    'scope-enum': [2, 'always', scopes],
+    'scope-enum': [2, 'always', []],
     'type-enum': [
       2,
       'always',
