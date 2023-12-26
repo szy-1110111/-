@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const components_myCalendar_utils = require("./utils.js");
 const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
   __name: "my-calendar",
   props: {
@@ -11,7 +12,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       }
     }
   },
-  emits: ["selectData"],
+  emits: ["selectData", "changeSwiper"],
   setup(__props, { emit }) {
     const props = __props;
     const current = common_vendor.ref(1);
@@ -21,115 +22,49 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     const toMonth = (/* @__PURE__ */ new Date()).getMonth() + 1;
     const toYear = (/* @__PURE__ */ new Date()).getFullYear();
     const weeksTxt = ["日", "一", "二", "三", "四", "五", "六"];
-    const preM_date = common_vendor.ref([]);
-    const thenM_date = common_vendor.ref([]);
-    const nexM_date = common_vendor.ref([]);
-    common_vendor.watch([current.value, props.patchMonthData], ([newCurrentt, newPatchMonthData], [oldCurrentt, oldPatchMonthData]) => {
-      switch (oldCurrentt) {
-        case 1:
-          if (newCurrentt == 2) {
-            let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-            nowYear.value = newNow.year;
-            nowMonth.value = newNow.month;
-            let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-            calculateGrids(next.year, next.month, preM_date.value);
-            fullDate(next.year, next.month, preM_date.value);
-          } else if (newCurrentt == 0) {
-            let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-            nowYear.value = newNow.year;
-            nowMonth.value = newNow.month;
-            let next = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-            calculateGrids(next.year, next.month, nexM_date.value);
-            fullDate(next.year, next.month, nexM_date.value);
-          }
-          this.$emit("changeSwiper", nowYear.value + "-" + nowMonth.value);
-          break;
-        case 2:
-          if (newCurrentt == 0) {
-            let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-            nowYear.value = newNow.year;
-            nowMonth.value = newNow.month;
-            let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-            calculateGrids(next.year, next.month, thenM_date.value);
-            fullDate(next.year, next.month, thenM_date.value);
-          } else if (newCurrentt == 1) {
-            let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-            nowYear.value = newNow.year;
-            nowMonth.value = newNow.month;
-            let next = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-            calculateGrids(next.year, next.month, preM_date.value);
-            fullDate(next.year, next.month, preM_date.value);
-          }
-          this.$emit("changeSwiper", nowYear.value + "-" + nowMonth.value);
-          break;
-        case 0:
-          if (newCurrentt == 1) {
-            let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-            nowYear.value = newNow.year;
-            nowMonth.value = newNow.month;
-            let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-            calculateGrids(next.year, next.month, nexM_date.value);
-            fullDate(next.year, next.month, nexM_date.value);
-          } else if (newCurrentt == 2) {
-            let newNow = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-            nowYear.value = newNow.year;
-            nowMonth.value = newNow.month;
-            let next = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-            calculateGrids(next.year, next.month, thenM_date.value);
-            fullDate(next.year, next.month, thenM_date.value);
-          }
-          this.$emit("changeSwiper", nowYear.value + "-" + nowMonth.value);
-          break;
-      }
-      switch (current.value) {
-        case 0:
-          changePatchMonth(newPatchMonthData, preM_date.value);
-          break;
-        case 1:
-          changePatchMonth(newPatchMonthData, thenM_date.value);
-          break;
-        case 2:
-          changePatchMonth(newPatchMonthData, nexM_date.value);
-          break;
-      }
+    const swiperPageM_data = common_vendor.ref([[], [], []]);
+    common_vendor.watch(props.patchMonthData, (newPatchMonthData, oldPatchMonthData) => {
+      changePatchMonth(newPatchMonthData, current.value);
     });
+    common_vendor.watch(
+      current,
+      (newCurrentt, oldCurrentt) => {
+        let mothSetup = 0;
+        if (newCurrentt + oldCurrentt == 3 || newCurrentt + oldCurrentt == 1) {
+          oldCurrentt - newCurrentt < 0 ? mothSetup = 1 : mothSetup = -1;
+        }
+        if (newCurrentt + oldCurrentt == 2) {
+          oldCurrentt - newCurrentt < 0 ? mothSetup = -1 : mothSetup = 1;
+        }
+        let changeCurrent = 3 - (newCurrentt + oldCurrentt);
+        redrawData(changeCurrent, mothSetup);
+        emit("changeSwiper", nowYear.value + "-" + nowMonth.value);
+      },
+      { deep: true }
+    );
     common_vendor.onMounted(() => {
       init();
     });
     const init = () => {
-      calculateGrids(nowYear.value, nowMonth.value, thenM_date.value);
-      fullDate(nowYear.value, nowMonth.value, thenM_date.value);
-      let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-      calculateGrids(next.year, next.month, nexM_date.value);
-      fullDate(next.year, next.month, nexM_date.value);
-      let last = getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-      calculateGrids(last.year, last.month, preM_date.value);
-      fullDate(last.year, last.month, preM_date.value);
+      calculateGrids(nowYear.value, nowMonth.value, 1);
+      fullDate(nowYear.value, nowMonth.value, 1);
+      let next = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, 1);
+      calculateGrids(next.year, next.month, 2);
+      fullDate(next.year, next.month, 2);
+      let last = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, -1);
+      calculateGrids(last.year, last.month, 0);
+      fullDate(last.year, last.month, 0);
     };
-    const toIOSDate = (strDate) => {
-      return strDate ? strDate.replace(/-/g, "/") : strDate;
-    };
-    const getFirstDayOfWeek = (year, month, day = 1) => {
-      let date = new Date(year, month - 1, day);
-      return date.getDay();
-    };
-    const getDaysInMonth = (year, month) => {
-      let date = new Date(year, month, 0);
-      return date.getDate();
-    };
-    const getOperateMonthDate = (y, m, num) => {
-      let month = m + num;
-      let year = y;
-      month > 12 ? (year++, month = 1) : null;
-      month < 1 ? (year--, month = 12) : null;
-      return {
-        month,
-        year
-      };
-    };
-    const calculateGrids = (year, month, calendarDays) => {
+    function redrawData(changeCurrent, mothSetup) {
+      nowYear.value = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup).year;
+      nowMonth.value = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup).month;
+      let next = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup);
+      calculateGrids(next.year, next.month, changeCurrent);
+      fullDate(next.year, next.month, changeCurrent);
+    }
+    const calculateGrids = (year, month, current2) => {
       let newCalendarDays = [];
-      const firstDayOfWeek = getFirstDayOfWeek(year, month);
+      const firstDayOfWeek = components_myCalendar_utils.getFirstDayOfWeek(year, month);
       if (firstDayOfWeek > 0) {
         for (let i = 0; i < firstDayOfWeek; i++) {
           newCalendarDays.push({
@@ -150,12 +85,12 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           });
         }
       }
-      const thisMonthDays = getDaysInMonth(year, month);
+      const thisMonthDays = components_myCalendar_utils.getDaysInMonth(year, month);
       const toDate = /* @__PURE__ */ new Date(toYear + "/" + toMonth + "/" + today);
       for (let i = 1; i <= thisMonthDays; i++) {
         const fullDate2 = year + "-" + month + "-" + i.toString().padStart(2, "0");
-        const isBeforeToday = new Date(toIOSDate(fullDate2)) < toDate;
-        const isToday = new Date(toIOSDate(fullDate2)).getTime() == toDate.getTime();
+        const isBeforeToday = new Date(components_myCalendar_utils.toIOSDate(fullDate2)) < toDate;
+        const isToday = new Date(components_myCalendar_utils.toIOSDate(fullDate2)).getTime() == toDate.getTime();
         newCalendarDays.push({
           date: i,
           fullDate: fullDate2,
@@ -168,23 +103,22 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
           //当前日期是否被选中
         });
       }
-      calendarDays.splice(0, calendarDays.length, ...newCalendarDays);
-      console.log(thenM_date.value);
+      swiperPageM_data.value[current2].splice(0, swiperPageM_data.value[current2].length, ...newCalendarDays);
     };
-    const fullDate = (year, month, calendarDays) => {
-      const firstDayOfWeek = getFirstDayOfWeek(year, month);
-      const lastMonthEndDay = getDaysInMonth(year, month - 1);
-      const lastMonth = getOperateMonthDate(year, month, -1);
+    const fullDate = (year, month, current2) => {
+      const firstDayOfWeek = components_myCalendar_utils.getFirstDayOfWeek(year, month);
+      const lastMonthEndDay = components_myCalendar_utils.getDaysInMonth(year, month - 1);
+      const lastMonth = components_myCalendar_utils.getOperateMonthDate(year, month, -1);
       for (let i = 0; i < firstDayOfWeek; i++) {
         const date = lastMonthEndDay - firstDayOfWeek + 1 + i;
-        calendarDays[i].date = date;
-        calendarDays[i].fullDate = lastMonth.year + "-" + lastMonth.month + "-" + date;
+        swiperPageM_data.value[current2][i].date = date;
+        swiperPageM_data.value[current2][i].fullDate = lastMonth.year + "-" + lastMonth.month + "-" + date;
       }
-      const endDay = getDaysInMonth(year, month);
-      const lastDayOfWeek = getFirstDayOfWeek(year, month, endDay);
-      const nextMonth = getOperateMonthDate(year, month, 1);
+      const endDay = components_myCalendar_utils.getDaysInMonth(year, month);
+      const lastDayOfWeek = components_myCalendar_utils.getFirstDayOfWeek(year, month, endDay);
+      const nextMonth = components_myCalendar_utils.getOperateMonthDate(year, month, 1);
       for (let i = 1; i <= 6 - lastDayOfWeek; i++) {
-        calendarDays.push({
+        swiperPageM_data.value[current2].push({
           date: i,
           fullDate: `${nextMonth.year}-${nextMonth.month}-${i}`,
           isBeforeToday: false,
@@ -200,9 +134,9 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
         });
       }
     };
-    const changePatchMonth = (patchMonthData, M_data) => {
-      if (patchMonthData && M_data) {
-        M_data.map((item) => {
+    const changePatchMonth = (patchMonthData, current2) => {
+      if (patchMonthData && swiperPageM_data.value[current2]) {
+        swiperPageM_data.value[current2].map((item) => {
           patchMonthData.forEach((item1) => {
             if (item.fullDate == item1.date) {
               item.patchStatus[0] = item1.result[0].patchResult == 4 ? "--primary-2" : item1.result[0].patchResult == 1 ? "--red" : item1.result[0].patchResult == 2 ? "--yellow" : "--white";
@@ -216,11 +150,11 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
     const changeSwiper = (e) => {
       current.value = e.detail.current;
     };
-    const selectData = (data, M_data) => {
+    const selectData = (data) => {
       emit("selectData", data);
-      M_data.map((item, index) => {
+      swiperPageM_data.value[current.value].map((item, index) => {
         item.isSelect = false;
-        item.fullDate == data ? M_data[index].isSelect = true : null;
+        item.fullDate == data ? swiperPageM_data.value[current.value][index].isSelect = true : null;
         return item;
       });
     };
@@ -234,71 +168,34 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
             b: index
           };
         }),
-        d: common_vendor.f(preM_date.value, (item, index, i0) => {
-          return common_vendor.e({
-            a: common_vendor.t(item.date),
-            b: item.isThisMonth
-          }, item.isThisMonth ? {
-            c: `linear-gradient(to bottom, var(${item.patchStatus[0]}) 55%, var(${item.patchStatus[1]}) 50%)`,
-            d: item.patchStatus[0] != "--grey" ? 1 : ""
-          } : {}, {
-            e: common_vendor.n({
-              otherMonth: !item.isThisMonth
+        d: common_vendor.f(swiperPageM_data.value, (currentData, index, i0) => {
+          return {
+            a: common_vendor.f(currentData, (item, index2, i1) => {
+              return common_vendor.e({
+                a: common_vendor.t(item.date),
+                b: item.isThisMonth
+              }, item.isThisMonth ? {
+                c: `linear-gradient(to bottom, var(${item.patchStatus[0]}) 55%, var(${item.patchStatus[1]}) 50%)`,
+                d: item.patchStatus[0] != "--grey" ? 1 : ""
+              } : {}, {
+                e: common_vendor.n({
+                  otherMonth: !item.isThisMonth
+                }),
+                f: common_vendor.n({
+                  isToday: item.isToday
+                }),
+                g: common_vendor.n({
+                  isSelect: item.isSelect
+                }),
+                h: index2,
+                i: common_vendor.o(($event) => selectData(item.fullDate), index2)
+              });
             }),
-            f: common_vendor.n({
-              isToday: item.isToday
-            }),
-            g: common_vendor.n({
-              isSelect: item.isSelect
-            }),
-            h: index,
-            i: common_vendor.o(($event) => selectData(item.fullDate, preM_date.value), index)
-          });
+            b: index
+          };
         }),
-        e: common_vendor.f(thenM_date.value, (item, index, i0) => {
-          return common_vendor.e({
-            a: common_vendor.t(item.date),
-            b: item.isThisMonth
-          }, item.isThisMonth ? {
-            c: `linear-gradient(to bottom, var(${item.patchStatus[0]}) 55%, var(${item.patchStatus[1]}) 50%)`,
-            d: item.patchStatus[0] != "--grey" ? 1 : ""
-          } : {}, {
-            e: common_vendor.n({
-              otherMonth: !item.isThisMonth
-            }),
-            f: common_vendor.n({
-              isToday: item.isToday
-            }),
-            g: common_vendor.n({
-              isSelect: item.isSelect
-            }),
-            h: index,
-            i: common_vendor.o(($event) => selectData(item.fullDate, thenM_date.value), index)
-          });
-        }),
-        f: common_vendor.f(nexM_date.value, (item, index, i0) => {
-          return common_vendor.e({
-            a: common_vendor.t(item.date),
-            b: item.isThisMonth
-          }, item.isThisMonth ? {
-            c: `linear-gradient(to bottom, var(${item.patchStatus[0]}) 55%, var(${item.patchStatus[1]}) 50%)`,
-            d: item.patchStatus[0] != "--grey" ? 1 : ""
-          } : {}, {
-            e: common_vendor.n({
-              otherMonth: !item.isThisMonth
-            }),
-            f: common_vendor.n({
-              isToday: item.isToday
-            }),
-            g: common_vendor.n({
-              isSelect: item.isSelect
-            }),
-            h: index,
-            i: common_vendor.o(($event) => selectData(item.fullDate, nexM_date.value), index)
-          });
-        }),
-        g: current.value,
-        h: common_vendor.o(changeSwiper)
+        e: current.value,
+        f: common_vendor.o(changeSwiper)
       };
     };
   }
