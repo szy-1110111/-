@@ -1,0 +1,7 @@
+{
+  "appid": "touristappid",
+  "component2": true,
+  "enableAppxNg": true,
+  "enableNodeModuleBabelTransform": true,
+  "projectname": "小程序日历"
+}
