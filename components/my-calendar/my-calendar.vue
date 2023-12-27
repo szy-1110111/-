@@ -63,11 +63,11 @@
 
 		// 除current0和2之间的滚动其余滚动的年月步进类型，1：现年月增加1月；-1：现年月减少1月
 		if ((newCurrentt + oldCurrentt == 3) || (newCurrentt + oldCurrentt == 1)) {
-			oldCurrentt - newCurrentt < 0 ? mothSetup = 1 : mothSetup = -1
+			mothSetup = oldCurrentt < newCurrentt ? 1 : -1
 		}
 		//current0和2之间的滚动的年月步进类型
-		if (newCurrentt + oldCurrentt == 2) {
-			oldCurrentt - newCurrentt < 0 ? mothSetup = -1 : mothSetup = 1
+		else if (newCurrentt + oldCurrentt == 2) {
+			mothSetup = oldCurrentt < newCurrentt ? -1 : 1
 		}
 		let changeCurrent = 3 - (newCurrentt + oldCurrentt)//计算出数据变动页的current
 		redrawData(changeCurrent, mothSetup)
@@ -76,26 +76,25 @@
 	},
 		{ deep: true }
 	)
-	onMounted(() => {
-		init()
-	})
+
 	//初始化渲染日历
 	const init = () => {
-		calculateGrids(nowYear.value, nowMonth.value, 1)
-		fullDate(nowYear.value, nowMonth.value, 1)
-		// 下个月日历
-		let next = getOperateMonthDate(nowYear.value, nowMonth.value, 1)
-		calculateGrids(next.year, next.month, 2)
-		fullDate(next.year, next.month, 2)
-		// 上个月日历
-		let last = getOperateMonthDate(nowYear.value, nowMonth.value, -1)
-		calculateGrids(last.year, last.month, 0)
-		fullDate(last.year, last.month, 0)
+		// 填充上月，本月，下月数据
+		swiperPageM_data.value.forEach((_, i) => {
+			const { year, month } = i === 1 ? { year: nowYear.value, month: nowMonth.value } : getOperateMonthDate(nowYear.value, nowMonth.value, i - 1)
+			calculateGrids(year, month, i)
+			fullDate(year, month, i);
+		})
 	}
 
+	onMounted(init)
 
-	//翻页重绘需更新页面
-	function redrawData(changeCurrent : number, mothSetup : number) {
+	/**
+	 * 翻页重绘需更新页面
+	 * @param changeCurrent {number}
+	 * @param mothSetup 
+	 */
+	function redrawData(changeCurrent : number, mothSetup : number) : void {
 		//头部显示当前所在年月更新
 		nowYear.value = getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup).year
 		nowMonth.value = getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup).month
@@ -105,11 +104,16 @@
 		fullDate(next.year, next.month, changeCurrent)
 	}
 
-	// 某月的日历数据导入
-	const calculateGrids = (year : number, month : number, current : number) => {
+	/** 
+	 * 某月的日历数据导入
+	 * @param year 
+	 * @param month
+	 * @param current
+	 */
+	const calculateGrids = (year : number, month : number, current : number) : void => {
 		// 计算当月1号前空了几个格子，把它填充在传入的某月的M_data数组的前面
 		//计算每个月时要清零
-		let newCalendarDays = []
+		const newCalendarDays : DailyData[] = []
 		const firstDayOfWeek = getFirstDayOfWeek(year, month)
 		if (firstDayOfWeek > 0) {
 			for (let i = 0; i < firstDayOfWeek; i++) {
@@ -144,8 +148,13 @@
 		swiperPageM_data.value[current].splice(0, swiperPageM_data.value[current].length, ...newCalendarDays);
 	}
 
-	// 填充日期数组
-	const fullDate = (year : number, month : number, current : number) => {
+	/**
+	 * 填充日期数组
+	 * @param year 
+	 * @param month 
+	 * @param current 
+	 */
+	const fullDate = (year : number, month : number, current : number) : void => {
 		// 日历前填充上个月末尾日期
 		const firstDayOfWeek = getFirstDayOfWeek(year, month) //1号星期几
 		const lastMonthEndDay = getDaysInMonth(year, month - 1) //上个月天数
@@ -174,7 +183,12 @@
 
 	// 父组件传值处理函数
 	// 当月打卡状态获取并加入数据数组中
-	const changePatchMonth = (patchMonthData : unknown[], current : number) => {
+	/**
+	 * 父组件传值处理函数, 当月打卡状态获取并加入数据数组中
+	 * @param patchMonthData 
+	 * @param current 
+	 */
+	const changePatchMonth = (patchMonthData : unknown[], current : number) : void => {
 		if (patchMonthData && swiperPageM_data.value[current]) {
 			swiperPageM_data.value[current].map((item : any) => {
 				patchMonthData.forEach((item1 : any) => {
@@ -217,8 +231,6 @@
 			return item
 		})
 	}
-  // }
-// }
 </script>
 
 <style lang="less" scoped>
