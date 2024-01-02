@@ -31,10 +31,9 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       (newCurrentt, oldCurrentt) => {
         let mothSetup = 0;
         if (newCurrentt + oldCurrentt == 3 || newCurrentt + oldCurrentt == 1) {
-          oldCurrentt - newCurrentt < 0 ? mothSetup = 1 : mothSetup = -1;
-        }
-        if (newCurrentt + oldCurrentt == 2) {
-          oldCurrentt - newCurrentt < 0 ? mothSetup = -1 : mothSetup = 1;
+          mothSetup = oldCurrentt < newCurrentt ? 1 : -1;
+        } else if (newCurrentt + oldCurrentt == 2) {
+          mothSetup = oldCurrentt < newCurrentt ? -1 : 1;
         }
         let changeCurrent = 3 - (newCurrentt + oldCurrentt);
         redrawData(changeCurrent, mothSetup);
@@ -42,19 +41,14 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       },
       { deep: true }
     );
-    common_vendor.onMounted(() => {
-      init();
-    });
     const init = () => {
-      calculateGrids(nowYear.value, nowMonth.value, 1);
-      fullDate(nowYear.value, nowMonth.value, 1);
-      let next = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, 1);
-      calculateGrids(next.year, next.month, 2);
-      fullDate(next.year, next.month, 2);
-      let last = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, -1);
-      calculateGrids(last.year, last.month, 0);
-      fullDate(last.year, last.month, 0);
+      swiperPageM_data.value.forEach((_, i) => {
+        const { year, month } = i === 1 ? { year: nowYear.value, month: nowMonth.value } : components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, i - 1);
+        calculateGrids(year, month, i);
+        fullDate(year, month, i);
+      });
     };
+    common_vendor.onMounted(init);
     function redrawData(changeCurrent, mothSetup) {
       nowYear.value = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup).year;
       nowMonth.value = components_myCalendar_utils.getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup).month;
@@ -63,7 +57,7 @@ const _sfc_main = /* @__PURE__ */ common_vendor.defineComponent({
       fullDate(next.year, next.month, changeCurrent);
     }
     const calculateGrids = (year, month, current2) => {
-      let newCalendarDays = [];
+      const newCalendarDays = [];
       const firstDayOfWeek = components_myCalendar_utils.getFirstDayOfWeek(year, month);
       if (firstDayOfWeek > 0) {
         for (let i = 0; i < firstDayOfWeek; i++) {
