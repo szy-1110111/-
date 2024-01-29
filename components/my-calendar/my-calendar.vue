@@ -34,13 +34,14 @@
 	import type { DailyData } from './type'
 	import { toIOSDate, getFirstDayOfWeek, getDaysInMonth, getOperateMonthDate } from './utils'
 	const emit = defineEmits(['selectData', 'changeSwiper'])
+  const date = new Date();
 
 	const current = ref(1)//轮播当前页码
-	const nowYear = ref(new Date().getFullYear())//当前显示的年
-	const nowMonth = ref(new Date().getMonth() + 1)//当前显示的月
-	const today = new Date().getDate()  //系统本日
-	const toMonth = new Date().getMonth() + 1 //系统本月
-	const toYear = new Date().getFullYear() //系统本年
+	const nowYear = ref(date.getFullYear())//当前显示的年
+	const nowMonth = ref(date.getMonth() + 1)//当前显示的月
+	const today = date.getDate()  //系统本日
+	const toMonth = date.getMonth() + 1 //系统本月
+	const toYear = date.getFullYear() //系统本年
 	const weeksTxt = ['日', '一', '二', '三', '四', '五', '六']
 	const swiperPageM_data = ref([[], [], []] as DailyData[][])//日历轮播三个页面对应的日期及数据
 	const props = defineProps({
