@@ -46,47 +46,37 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, watch, onMounted, defineEmits } from "vue";
-import type { DailyData } from "./type";
-import {
-  toIOSDate,
-  getFirstDayOfWeek,
-  getDaysInMonth,
-  getOperateMonthDate,
-} from "./utils";
-const emit = defineEmits(["selectData", "changeSwiper"]);
+	import { ref, reactive, watch, onMounted, defineEmits } from 'vue'
+	import type { DailyData } from './type'
+	import { toIOSDate, getFirstDayOfWeek, getDaysInMonth, getOperateMonthDate } from './utils'
+	const emit = defineEmits(['selectData', 'changeSwiper'])
+  const date = new Date();
 
-const current = ref(1); //轮播当前页码
-const nowYear = ref(new Date().getFullYear()); //当前显示的年
-const nowMonth = ref(new Date().getMonth() + 1); //当前显示的月
-const today = new Date().getDate(); //系统本日
-const toMonth = new Date().getMonth() + 1; //系统本月
-const toYear = new Date().getFullYear(); //系统本年
-const weeksTxt = ["日", "一", "二", "三", "四", "五", "六"];
-const swiperPageM_data = ref([[], [], []] as DailyData[][]); //日历轮播三个页面对应的日期及数据
-const props = defineProps({
-  //当月打卡数据
-  patchMonthData: {
-    type: Array,
-    default: () => {
-      return [];
-    },
-  },
-  fullDate: {
-    type: Boolean,
-    default: false,
-  },
-});
-// 监听打卡数据变动
-watch(props.patchMonthData, (newPatchMonthData, oldPatchMonthData) => {
-  // 当前页数将打卡数据加入到对应的数据数组中
-  changePatchMonth(newPatchMonthData, current.value);
-});
-//监听轮播页码的变动
-watch(
-  current,
-  (newCurrentt, oldCurrentt) => {
-    let mothSetup = 0;
+	const current = ref(1)//轮播当前页码
+	const nowYear = ref(date.getFullYear())//当前显示的年
+	const nowMonth = ref(date.getMonth() + 1)//当前显示的月
+	const today = date.getDate()  //系统本日
+	const toMonth = date.getMonth() + 1 //系统本月
+	const toYear = date.getFullYear() //系统本年
+	const weeksTxt = ['日', '一', '二', '三', '四', '五', '六']
+	const swiperPageM_data = ref([[], [], []] as DailyData[][])//日历轮播三个页面对应的日期及数据
+	const props = defineProps({
+		//当月打卡数据
+		patchMonthData: {
+			type: Array,
+			default: () => {
+				return []
+			}
+		}
+	})
+	// 监听打卡数据变动
+	watch(props.patchMonthData, (newPatchMonthData, oldPatchMonthData) => {
+		// 当前页数将打卡数据加入到对应的数据数组中
+		changePatchMonth(newPatchMonthData, current.value)
+	})
+	//监听轮播页码的变动
+	watch(current, (newCurrentt, oldCurrentt) => {
+		let mothSetup = 0
 
     // 除current0和2之间的滚动其余滚动的年月步进类型，1：现年月增加1月；-1：现年月减少1月
     if (newCurrentt + oldCurrentt == 3 || newCurrentt + oldCurrentt == 1) {
