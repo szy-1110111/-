@@ -115,17 +115,15 @@ onMounted(init);
  * @param mothSetup
  */
 function redrawData(changeCurrent: number, mothSetup: number): void {
+  const operateeMonthDate = getOperateMonthDate(
+    nowYear.value,
+    nowMonth.value,
+    mothSetup
+  )
+
   //头部显示当前所在年月更新
-  nowYear.value = getOperateMonthDate(
-    nowYear.value,
-    nowMonth.value,
-    mothSetup
-  ).year;
-  nowMonth.value = getOperateMonthDate(
-    nowYear.value,
-    nowMonth.value,
-    mothSetup
-  ).month;
+  nowYear.value = operateeMonthDate.year;
+  nowMonth.value = operateeMonthDate.month;
   //数据需变化轮播页码的日历数据更新
   let next = getOperateMonthDate(nowYear.value, nowMonth.value, mothSetup);
   calculateGrids(next.year, next.month, changeCurrent);
